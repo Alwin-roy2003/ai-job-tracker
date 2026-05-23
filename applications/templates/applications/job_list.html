@@ -1,0 +1,376 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard | Job Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#003366',
+                        accent: '#d4a017',
+                        google: '#202124'
+                    },
+                    letterSpacing: { 'ultra': '0.3em' }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: "Segoe UI", Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+        * { border-radius: 0 !important; }
+
+        .navbar { 
+            transition: all 0.4s ease; 
+            background: transparent !important; 
+            border: none !important; 
+            box-shadow: none !important; 
+        }
+
+        .container-box { 
+            background: #fff; 
+            border-radius: 8px !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead { background-color: #003366; color: #ffffff; }
+        th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #eee; }
+        th { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+        .btn { padding: 10px 20px; border-radius: 12px !important; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.25s ease; text-decoration: none; display: inline-block; border: none; }
+        .btn-dark { background: #2b2b2b; color: #fff; }
+        .btn-primary { background: #003366; color: #fff; }
+        .btn-accent { background: #d4a017; color: #fff; }
+        .btn-outline { background: #fff; color: #333; border: 1px solid #ddd; }
+        .btn-live { background: #2563eb; color: #fff; font-size: 11px; padding: 6px 12px; }
+        .btn-live:hover { background: #1d4ed8; }
+        .btn-email { background: #10b981; color: #fff; font-size: 11px; padding: 6px 12px; }
+        .btn-email:hover { background: #059669; }
+
+        .status { padding: 5px 12px; border-radius: 6px !important; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+        .status.dispatched { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .status.processing { background: #fef9c3; color: #a16207; font-weight: bold; border: 1px solid #fde68a; }
+        .status.applied { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+
+        .ats-badge { background: #fef3c7; color: #d4a017; padding: 2px 8px; font-size: 10px; font-weight: 800; border: 1px solid #fde68a; border-radius: 4px !important; }
+        .lang-badge { font-size: 9px; font-weight: bold; color: #94a3b8; text-transform: uppercase; }
+
+        /* AI Modal Styles */
+        #aiModal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.85); align-items: center; justify-content: center; }
+        .modal-content { background: white; width: 850px; overflow: hidden; box-shadow: 0 25px 50px rgba(0,0,0,0.5); border: 2px solid #003366; max-height: 90vh; overflow-y: auto; }
+        .modal-doc-view { padding: 40px; background: #fff; min-height: 500px; }
+
+        .tab-btn { padding: 10px 20px; font-weight: 700; text-transform: uppercase; font-size: 11px; letter-spacing: 0.1em; cursor: pointer; color: #94a3b8; border-bottom: 2px solid transparent; transition: 0.3s; }
+        .tab-btn.active { color: #003366; border-bottom-color: #003366; }
+
+        /* Live Apply Status Indicator */
+        .live-status { display: inline-flex; align-items: center; gap: 4px; }
+        .pulse { width: 8px; height: 8px; background: #ef4444; border-radius: 50% !important; animation: pulse-animation 1.5s infinite; }
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .loading-spinner { 
+            border: 2px solid #f3f3f3; 
+            border-top: 2px solid #3498db; 
+            border-radius: 50% !important; 
+            width: 12px; 
+            height: 12px; 
+            animation: spin 1s linear infinite; 
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+
+<body class="bg-[#f4f4f4] overflow-x-hidden">
+
+    <!-- Navbar -->
+    <header id="navbar" class="fixed top-0 left-0 w-full z-[1000] navbar py-6">
+        <nav class="max-w-7xl mx-auto px-8 flex items-center justify-center relative">
+            <div class="absolute left-8">
+                <a href="{% url 'job_list' %}" class="text-primary text-xl font-bold tracking-tighter">JOB TRACKER</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="pt-32 pb-20 max-w-6xl mx-auto px-8">
+        <!-- Header -->
+        <div class="text-center">
+            <h1 class="text-3xl font-bold text-slate-800 mb-6">My Job Applications</h1>
+
+            <div class="top-buttons mb-6 flex justify-center gap-3">
+                <a href="/reminders/" class="btn btn-dark">Reminders</a>
+                <!-- FIX: Changed from hardcoded /applications/add/ to {% url 'job_create' %} -->
+                <a href="{% url 'job_create' %}" class="btn btn-primary">+ Apply New Job</a>
+            </div>
+
+            <div class="category-bar mb-10 flex justify-center gap-3">
+                <a href="?language=english" class="btn btn-outline">GB English</a>
+                <a href="?language=german" class="btn btn-outline">DE German</a>
+                <a href="/applications/" class="btn btn-outline">Show All</a>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="container-box overflow-hidden">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Job Title & Assurance</th>
+                        <th>Target Platform</th>
+                        <th>Automated Matches</th>
+                        <th>Status / Email</th>
+                        <th>Search Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for job in jobs %}
+                    <tr>
+                        <td>
+                            <div class="flex items-center gap-2">
+                                <div style="font-weight: 700; color: #1e293b;">{{ job.title }}</div>
+                            </div>
+                            <span class="lang-badge">{{ job.language }}</span>
+                        </td>
+                        <td><span style="font-weight: 600; color: #475569;">{{ job.platform }}</span></td>
+                        <td>
+                            {% if job.matches.exists %}
+                                {% for match in job.matches.all %}
+                                <div class="mb-3 p-2 bg-gray-50 rounded border border-gray-200">
+                                    <div class="flex items-center gap-2 mb-2 flex-wrap">
+                                        <!-- View CV Button -->
+                                        <button class="btn-accent !py-1 !px-2 !text-[10px]" 
+                                                onclick="showAI('{{ match.id }}', '{{ match.company_name|escapejs }}', '{{ match.tailored_cv_text|escapejs }}', '{{ match.cover_letter_text|escapejs }}', '{{ match.ats_score }}')">
+                                            <i class="fas fa-eye mr-1"></i> {{ match.company_name }}
+                                        </button>
+                                        
+                                        <span class="ats-badge">{{ match.ats_score }}% Match</span>
+                                    </div>
+                                    
+                                    <div class="flex gap-2 flex-wrap">
+                                        <!-- Live Apply Button -->
+                                        <button class="btn-live" 
+                                                onclick="startLiveApplication('{{ match.id }}', '{{ match.company_name|escapejs }}')"
+                                                id="apply-btn-{{ match.id }}"
+                                                {% if match.status == 'applied' %}disabled style="opacity: 0.6;"{% endif %}>
+                                            {% if match.status == 'applied' %}
+                                                <i class="fas fa-check mr-1"></i> Applied
+                                            {% else %}
+                                                <i class="fas fa-play mr-1"></i> Live Apply
+                                            {% endif %}
+                                        </button>
+                                        
+                                        <!-- Email Status -->
+                                        {% if match.is_sent %}
+                                            <span class="btn-email opacity-75 cursor-default">
+                                                <i class="fas fa-envelope mr-1"></i> Emailed
+                                            </span>
+                                        {% else %}
+                                            <button class="btn-outline !py-1 !px-2 !text-[10px] border-gray-300 text-gray-600" 
+                                                    onclick="resendEmail('{{ match.id }}')"
+                                                    id="email-btn-{{ match.id }}">
+                                                <i class="fas fa-paper-plane mr-1"></i> Send Email
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Status Indicator -->
+                                    <div class="mt-2 text-xs text-gray-500" id="status-text-{{ match.id }}">
+                                        {% if match.status == 'applied' %}
+                                            <span class="text-green-600"><i class="fas fa-check-circle"></i> Application submitted</span>
+                                        {% elif match.status == 'applying' %}
+                                            <span class="live-status text-blue-600">
+                                                <span class="pulse"></span> Live automation in progress...
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <a href="{% url 're_tailor_job' job.id %}" class="status processing">
+                                    {% if job.tailored_content %}{{ job.tailored_content }}{% else %}🔎 Searching...{% endif %}
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if job.matches.exists %}
+                                {% if job.matches.first.status == 'applied' %}
+                                    <span class="status applied"><i class="fas fa-check mr-1 text-[9px]"></i> APPLIED</span>
+                                {% else %}
+                                    <span class="status" style="background:#f1f5f9; color: #94a3b8;">QUEUED</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="status" style="background:#f1f5f9; color: #94a3b8;">PENDING</span>
+                            {% endif %}
+                        </td>
+                        <td style="color: #94a3b8; font-size: 13px;">{{ job.applied_date|date:"d M Y" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-20 text-slate-400 uppercase tracking-widest text-sm font-semibold">
+                            No applications found.
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- AI RESULT MODAL -->
+    <div id="aiModal" class="flex" style="display: none;">
+        <div class="modal-content">
+            <div style="background: #003366; color: white; padding: 25px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 id="aiTitle" style="margin: 0; font-size: 20px; font-weight: 700;"></h2>
+                    <span id="aiScore" class="ats-badge !bg-accent !text-white !border-none mt-2 inline-block"></span>
+                </div>
+                <div class="flex gap-3">
+                    <a id="downloadTxt" href="#" class="text-white text-sm hover:underline"><i class="fas fa-download mr-1"></i> TXT</a>
+                    <i class="fas fa-times cursor-pointer opacity-50 hover:opacity-100 text-xl" onclick="closeModal()"></i>
+                </div>
+            </div>
+            
+            <div class="modal-doc-view">
+                <div class="flex border-b mb-8 gap-10">
+                    <div id="tabCV" class="tab-btn active" onclick="switchTab('cv')">Tailored Resumé</div>
+                    <div id="tabCL" class="tab-btn" onclick="switchTab('cl')">Cover Letter</div>
+                </div>
+                <div id="aiBody" style="white-space: pre-wrap; font-family: 'Times New Roman', serif; font-size: 16px; color: #1e293b; line-height: 1.7; min-height: 350px;"></div>
+            </div>
+
+            <div style="padding: 25px; background: #f8fafc; border-top: 1px solid #eee; text-align: right;">
+                <a id="downloadDocx" href="#" class="btn btn-primary mr-3 text-xs">
+                    <i class="fas fa-file-pdf mr-1"></i> Download PDF
+                </a>
+                <button class="btn btn-dark text-xs" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE APPLY POPUP OVERLAY -->
+    <div id="liveApplyOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center;">
+        <div style="background: white; padding: 40px; border-radius: 8px; text-align: center; max-width: 500px;">
+            <div class="loading-spinner" style="width: 40px; height: 40px; border-width: 4px; margin: 0 auto 20px;"></div>
+            <h3 class="text-xl font-bold mb-2">Opening Browser...</h3>
+            <p class="text-gray-600">Starting live automation session. Please allow popups if blocked.</p>
+        </div>
+    </div>
+
+    <script>
+        let currentCV = "";
+        let currentCL = "";
+        let currentMatchId = null;
+
+        function showAI(matchId, company, cv, cl, score) {
+            currentMatchId = matchId;
+            currentCV = cv;
+            currentCL = cl || "Cover letter generating...";
+            
+            document.getElementById('aiTitle').innerText = company;
+            document.getElementById('aiScore').innerText = "ATS Match: " + score + "%";
+            
+            document.getElementById('downloadDocx').href = `/applications/download-docx/${matchId}/`;
+            document.getElementById('downloadTxt').href = `/applications/download-txt/${matchId}/`;
+            
+            switchTab('cv');
+            document.getElementById('aiModal').style.display = "flex";
+        }
+
+        function switchTab(type) {
+            const body = document.getElementById('aiBody');
+            const tCV = document.getElementById('tabCV');
+            const tCL = document.getElementById('tabCL');
+            if(type === 'cv') {
+                body.innerText = currentCV;
+                tCV.classList.add('active'); tCL.classList.remove('active');
+            } else {
+                body.innerText = currentCL;
+                tCL.classList.add('active'); tCV.classList.remove('active');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('aiModal').style.display = "none";
+        }
+
+        function startLiveApplication(matchId, companyName) {
+            const btn = document.getElementById(`apply-btn-${matchId}`);
+            const statusText = document.getElementById(`status-text-${matchId}`);
+            
+            btn.innerHTML = '<span class="loading-spinner"></span> Starting...';
+            btn.disabled = true;
+            
+            const overlay = document.getElementById('liveApplyOverlay');
+            overlay.style.display = 'flex';
+            
+            const popup = window.open(
+                `/applications/live-apply/${matchId}/`, 
+                `LiveApply_${matchId}`, 
+                'width=1200,height=800,scrollbars=yes,resizable=yes'
+            );
+            
+            if (!popup) {
+                alert('Popup blocked! Please allow popups.');
+                btn.innerHTML = '<i class="fas fa-play mr-1"></i> Retry';
+                btn.disabled = false;
+                overlay.style.display = 'none';
+                return;
+            }
+            
+            setTimeout(() => { overlay.style.display = 'none'; }, 2000);
+            statusText.innerHTML = '<span class="live-status text-blue-600"><span class="pulse"></span> Live automation in progress...</span>';
+            
+            const checkStatus = setInterval(async () => {
+                try {
+                    const response = await fetch(`/applications/api/status/${matchId}/`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'applied') {
+                        btn.innerHTML = '<i class="fas fa-check mr-1"></i> Applied';
+                        statusText.innerHTML = '<span class="text-green-600">Application submitted successfully!</span>';
+                        clearInterval(checkStatus);
+                        setTimeout(() => location.reload(), 2000);
+                    } else if (data.status === 'failed') {
+                        btn.innerHTML = 'Retry';
+                        btn.disabled = false;
+                        clearInterval(checkStatus);
+                    }
+                } catch(e) { console.error('Polling error:', e); }
+            }, 3000);
+        }
+
+        async function resendEmail(matchId) {
+            const btn = document.getElementById(`email-btn-${matchId}`);
+            btn.innerHTML = '...';
+            try {
+                const response = await fetch(`/applications/api/send-email/${matchId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrf-token]').content,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    btn.outerHTML = '<span class="btn-email opacity-75">Emailed</span>';
+                    location.reload();
+                }
+            } catch (e) { alert('Error: ' + e.message); btn.innerHTML = 'Retry'; }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('aiModal')) closeModal();
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Platform — Job Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0f0f0f;
+            --surface: #1a1a1a;
+            --border: #2a2a2a;
+            --red: #ff3b3b;
+            --red-dim: rgba(255, 59, 59, 0.1);
+            --red-border: rgba(255, 59, 59, 0.3);
+            --text: #e8e8e8;
+            --text-muted: #666;
+            --cancel-bg: #222;
+            --cancel-hover: #2e2e2e;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'DM Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 56px;
+            background: rgba(15,15,15,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 2rem;
+            z-index: 10;
+            gap: 0.6rem;
+        }
+
+        .navbar-logo {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .navbar-logo span { color: var(--red); }
+        .navbar-sep { color: var(--border); margin: 0 0.25rem; }
+        .navbar-page { font-size: 0.82rem; color: #444; }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.75rem;
+            max-width: 480px;
+            width: 100%;
+            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .icon-wrap {
+            width: 60px; height: 60px;
+            background: var(--red-dim);
+            border: 1px solid var(--red-border);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.75rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,59,59,0.15); }
+            50%       { box-shadow: 0 0 0 8px rgba(255,59,59,0); }
+        }
+
+        .icon-wrap svg { width: 28px; height: 28px; color: var(--red); }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .subtitle {
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin-bottom: 1.75rem;
+        }
+
+        .platform-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            background: var(--red-dim);
+            border: 1px solid var(--red-border);
+            border-radius: 8px;
+            padding: 0.5rem 0.9rem;
+            margin-bottom: 1.5rem;
+            font-family: 'DM Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--red);
+            letter-spacing: 0.03em;
+        }
+
+        .platform-tag svg { width: 13px; height: 13px; opacity: 0.75; flex-shrink: 0; }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.83rem;
+        }
+
+        .info-row:last-of-type { border-bottom: none; margin-bottom: 1.5rem; }
+        .info-label { color: var(--text-muted); }
+        .info-value { color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.78rem; }
+
+        .warning-box {
+            background: rgba(255,59,59,0.05);
+            border: 1px solid var(--red-border);
+            border-left: 3px solid var(--red);
+            border-radius: 10px;
+            padding: 0.9rem 1rem;
+            margin-bottom: 1.75rem;
+            font-size: 0.82rem;
+            color: #ff7070;
+            line-height: 1.65;
+        }
+
+        .warning-box strong { color: var(--red); }
+
+        .divider { height: 1px; background: var(--border); margin-bottom: 1.75rem; }
+
+        .actions { display: flex; gap: 0.75rem; }
+
+        .btn {
+            flex: 1;
+            padding: 0.8rem 1.25rem;
+            border-radius: 10px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.18s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            text-decoration: none;
+            letter-spacing: -0.01em;
+        }
+
+        .btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+        .btn-cancel {
+            background: var(--cancel-bg);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .btn-cancel:hover {
+            background: var(--cancel-hover);
+            color: var(--text);
+            border-color: #3a3a3a;
+        }
+
+        .btn-delete { background: var(--red); color: #fff; }
+
+        .btn-delete:hover {
+            background: #e02020;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255,59,59,0.4);
+        }
+
+        .btn-delete:active { transform: translateY(0); box-shadow: none; }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.75rem;
+            color: #333;
+        }
+
+        .footer-note a { color: #444; text-decoration: none; }
+        .footer-note a:hover { color: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <span class="navbar-logo">job<span>_</span>tracker</span>
+        <span class="navbar-sep">/</span>
+        <span class="navbar-page">platforms / delete</span>
+    </nav>
+
+    <div class="card">
+
+        <div class="icon-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948
+                         3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949
+                         3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12
+                         15.75h.007v.008H12v-.008z"/>
+            </svg>
+        </div>
+
+        <h1>Delete Platform</h1>
+        <p class="subtitle">
+            You are about to permanently delete this platform and all data
+            associated with it. This action <strong style="color: var(--text);">cannot be undone.</strong>
+        </p>
+
+        <div class="platform-tag">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5
+                         0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5
+                         4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244"/>
+            </svg>
+            {{ company.name }}
+        </div>
+
+        <div class="info-row">
+            <span class="info-label">Platform type</span>
+            <span class="info-value">{{ company.get_platform_type_display }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Website</span>
+            <span class="info-value">{{ company.website|default:"—" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Location</span>
+            <span class="info-value">{{ company.location|default:"—" }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Created</span>
+            <span class="info-value">{{ company.created_at|date:"d M Y" }}</span>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠ Warning:</strong> Deleting <strong>{{ company.name }}</strong>
+            will also remove all associated job applications and automation
+            history linked to this platform. Make sure you no longer need this data.
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="actions">
+            <a href="{% url 'company_list' %}" class="btn btn-cancel">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/>
+                </svg>
+                Cancel
+            </a>
+
+            <form method="post" style="flex:1; display:flex;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-delete" style="width:100%;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                         stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                              d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21
+                                 c.342.052.682.107 1.022.166m-1.022-.165L18.16
+                                 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25
+                                 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108
+                                 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114
+                                 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5
+                                 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964
+                                 0 00-3.32 0c-1.18.037-2.09 1.022-2.09
+                                 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/>
+                    </svg>
+                    Yes, Delete
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+    <p class="footer-note">
+        Changed your mind? <a href="{% url 'company_list' %}">Go back to platforms</a>
+    </p>
+
+</body>
+</html>

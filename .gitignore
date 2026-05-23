@@ -18,3 +18,5 @@ db.sqlite3
 # OS files
 Thumbs.db
 .DS_Store
+
+media/

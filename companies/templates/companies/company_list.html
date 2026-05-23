@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Platforms | TCR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page {
+            min-height: 100vh;
+            padding: 30px 18px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 30px;
+            color: #003366; /* TCR Blue */
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .add-btn {
+            background: #003366;
+            color: white;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: 0.2s ease;
+        }
+
+        .add-btn:hover {
+            background: #002244;
+            transform: translateY(-1px);
+        }
+
+        .home-btn {
+            background: #2b2b2b;
+            color: white;
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.10);
+            padding: 10px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 15px;
+            border-bottom: 1px solid #e6ebf2;
+            transition: 0.2s ease;
+        }
+
+        li:hover {
+            background: #f8fafc;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        .platform-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .platform-name {
+            font-size: 17px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .platform-meta {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .type-badge {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #d4a017; /* Gold accent */
+            letter-spacing: 0.05em;
+        }
+
+        .website-link {
+            font-size: 12px;
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        .delete-btn {
+            background: #fee2e2;
+            color: #ef4444;
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: 0.2s ease;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 50px 10px;
+            color: #6b7280;
+            font-size: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="container">
+
+            <div class="header">
+                <h1>Job Platforms</h1>
+                <div class="btn-group">
+                    <a class="home-btn" href="/">Dashboard</a>
+                    <a class="add-btn" href="{% url 'company_create' %}">+ Add Platform</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <ul>
+                    {% for platform in companies %}
+                        <li>
+                            <div class="platform-info">
+                                <div class="platform-name">{{ platform.name }}</div>
+                                <div class="platform-meta">
+                                    <span class="type-badge">{{ platform.get_platform_type_display }}</span>
+                                    {% if platform.website %}
+                                        <a href="{{ platform.website }}" target="_blank" class="website-link">🔗 Visit Site</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <a class="delete-btn" href="{% url 'company_delete' platform.id %}" onclick="return confirm('Delete this platform?')">Remove</a>
+                        </li>
+                    {% empty %}
+                        <li class="empty">
+                            No platforms added yet.<br>
+                            <small>Add sites like LinkedIn or Indeed to start tracking.</small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

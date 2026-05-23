@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Job Platform | TCR</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 520px;
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+            padding: 28px;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            text-align: center;
+            font-size: 28px;
+            color: #003366; /* TCR Blue */
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d5dbe3;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s ease;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: #003366;
+            box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        button {
+            flex: 2;
+            padding: 14px;
+            background: #003366;
+            border: none;
+            color: white;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s ease;
+            font-size: 15px;
+        }
+
+        button:hover {
+            background: #002244;
+            transform: translateY(-1px);
+        }
+
+        .back-btn {
+            flex: 1;
+            text-align: center;
+            padding: 14px;
+            border-radius: 10px;
+            background: #eef2f7;
+            color: #111;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.2s ease;
+            font-size: 15px;
+            line-height: 1.2;
+        }
+
+        .back-btn:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+
+        .hint {
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="card">
+            <h1>Add Platform</h1>
+            <div class="subtitle">Job Search Sources</div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <!-- Platform Name (e.g. LinkedIn) -->
+                <div class="form-group">
+                    <label>Platform Name</label>
+                    <input type="text" name="name" required placeholder="e.g. LinkedIn, Xing, Indeed.de">
+                </div>
+
+                <!-- Platform Type (Categorization for German Market) -->
+                <div class="form-group">
+                    <label>Platform Type</label>
+                    <select name="platform_type" required>
+                        <option value="social">Social Media (LinkedIn/Xing)</option>
+                        <option value="board" selected>Job Board (Indeed/Stepstone)</option>
+                        <option value="app">Job Search App</option>
+                        <option value="direct">Direct Company Website</option>
+                        <option value="agency">Recruitment Agency</option>
+                    </select>
+                </div>
+
+                <!-- Website URL -->
+                <div class="form-group">
+                    <label>Website URL</label>
+                    <input type="url" name="website" placeholder="https://www.linkedin.com/jobs">
+                </div>
+
+                <div class="actions">
+                    <button type="submit">Save Platform</button>
+                    <a class="back-btn" href="{% url 'company_list' %}">Cancel</a>
+                </div>
+
+                <div class="hint">
+                    These will appear in your "Apply Job" dropdown list.
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

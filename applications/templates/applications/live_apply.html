@@ -1,0 +1,321 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>🔴 Live Application - {{ match.company_name|default:"Unknown" }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0f172a; 
+            color: white; 
+        }
+        .log-entry { 
+            animation: fadeIn 0.3s ease-in; 
+            border-left: 3px solid transparent;
+            padding-left: 10px;
+            margin-bottom: 8px;
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateX(-10px); } 
+            to { opacity: 1; transform: translateX(0); } 
+        }
+        .log-entry.success { border-left-color: #10b981; }
+        .log-entry.error { border-left-color: #ef4444; }
+        .log-entry.action { border-left-color: #3b82f6; }
+        .log-entry.info { border-left-color: #f59e0b; }
+        .log-entry.warning { border-left-color: #f97316; }
+        
+        .pulse-dot {
+            width: 12px;
+            height: 12px;
+            background: #ef4444;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .terminal {
+            background: #1e293b;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="p-6 min-h-screen">
+    <div class="max-w-5xl mx-auto">
+        <!-- Header -->
+        <div class="flex justify-between items-start mb-6">
+            <div>
+                <h1 class="text-3xl font-bold mb-2 flex items-center gap-3">
+                    <span class="pulse-dot"></span>
+                    Live Browser Automation
+                </h1>
+                <p class="text-gray-400">Real-time job application simulation</p>
+            </div>
+            <button onclick="window.close()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm transition">
+                <i class="fas fa-times mr-2"></i>Close Window
+            </button>
+        </div>
+
+        <!-- Job Info Card -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-6 border border-gray-700">
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Company</p>
+                    <p class="text-xl font-semibold text-blue-400">{{ match.company_name|default:"Not Set" }}</p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Platform</p>
+                    <p class="text-lg text-green-400">
+                        <i class="fab fa-linkedin mr-2"></i>{{ match.job_query.platform|default:"LinkedIn"|title }}
+                    </p>
+                </div>
+                <div>
+                    <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Status</p>
+                    <div id="status-badge" class="status-badge bg-yellow-900 text-yellow-200">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <span id="status-text">{{ match.status|default:"Initializing..."|title }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if not selenium_available %}
+        <div class="bg-red-900 border border-red-700 rounded-lg p-6 mb-6">
+            <div class="flex items-start gap-4">
+                <i class="fas fa-exclamation-triangle text-red-400 text-2xl mt-1"></i>
+                <div>
+                    <h3 class="text-lg font-semibold text-red-200 mb-2">Browser Automation Not Available</h3>
+                    <p class="text-red-200">Please install Selenium and restart your server.</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <!-- Live Terminal -->
+        <div class="terminal p-4 mb-6 h-96 overflow-y-auto" id="terminal">
+            <div id="live-logs">
+                {% for log in logs %}
+                <div class="log-entry {{ log.action }}">
+                    <span class="text-gray-500">[{{ log.timestamp|time:"H:i:s" }}]</span>
+                    <span class="font-semibold text-blue-400">{{ log.action|upper }}</span>:
+                    <span class="text-gray-300">{{ log.description }}</span>
+                </div>
+                {% empty %}
+                <div class="text-gray-600 italic" id="waiting-msg">Waiting for automation to start...</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Control Buttons (Hidden by default, shown if auto-start fails) -->
+        <div class="flex gap-4 mb-6" id="control-buttons" style="display: none;">
+            <button id="start-btn" onclick="startAutomation()" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition flex items-center gap-2">
+                <i class="fas fa-play"></i> Start Automation
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if selenium_available %}
+   <script>
+    let matchId = "{{ match.id }}";
+    let isRunning = false;
+    let hasStarted = false;
+
+    // ✅ CORRECT: Base URL for API calls
+    const API_BASE = '/applications';
+
+    async function startAutomation() {
+        if (hasStarted) return;
+        hasStarted = true;
+        
+        const btn = document.getElementById('start-btn');
+        const waitingMsg = document.getElementById('waiting-msg');
+        
+        if (waitingMsg) waitingMsg.textContent = "Initializing automation...";
+        if (btn) {
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting...';
+            btn.disabled = true;
+        }
+        
+        updateStatus('running', 'Starting Automation...');
+        
+        try {
+            // ✅ FIXED: Use absolute URL with /applications/ prefix
+            const response = await fetch(`${API_BASE}/api/trigger-apply/${matchId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                updateStatus('running', 'Automation Running...');
+                isRunning = true;
+                addLogEntry('info', 'Automation started successfully');
+                startLogPolling();
+            } else {
+                throw new Error(data.error || data.message || 'Unknown error');
+            }
+        } catch (error) {
+            console.error("Start automation error:", error);
+            addLogEntry('error', `Failed to start: ${error.message}`);
+            updateStatus('error', 'Start Failed');
+            
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-redo"></i> Retry';
+            }
+            document.getElementById('control-buttons').style.display = 'flex';
+            hasStarted = false;
+        }
+    }
+
+    function addLogEntry(action, description) {
+        const container = document.getElementById('live-logs');
+        const waitingMsg = document.getElementById('waiting-msg');
+        if (waitingMsg) waitingMsg.remove();
+        
+        const div = document.createElement('div');
+        div.className = `log-entry ${action}`;
+        const time = new Date().toLocaleTimeString('en-GB', {hour12: false});
+        div.innerHTML = `<span class="text-gray-500">[${time}]</span> <span class="font-semibold uppercase">${action}</span>: ${description}`;
+        container.appendChild(div);
+        
+        const terminal = document.getElementById('terminal');
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function startLogPolling() {
+        const interval = setInterval(async () => {
+            if (!isRunning) {
+                clearInterval(interval);
+                return;
+            }
+            
+            try {
+                // ✅ FIXED: Use absolute URL with /applications/ prefix
+                const response = await fetch(`${API_BASE}/api/logs/${matchId}/`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    console.error("Failed to fetch logs:", data);
+                    return;
+                }
+                
+                const container = document.getElementById('live-logs');
+                container.innerHTML = '';
+                
+                if (data.logs.length === 0) {
+                    container.innerHTML = '<div class="text-gray-600 italic">No logs yet...</div>';
+                } else {
+                    data.logs.forEach(log => {
+                        const div = document.createElement('div');
+                        div.className = `log-entry ${log.action}`;
+                        const time = log.time || new Date().toLocaleTimeString('en-GB', {hour12: false});
+                        div.innerHTML = `<span class="text-gray-500">[${time}]</span> <span class="font-semibold uppercase">${log.action}</span>: ${log.description}`;
+                        container.appendChild(div);
+                    });
+                }
+                
+                const terminal = document.getElementById('terminal');
+                terminal.scrollTop = terminal.scrollHeight;
+
+                if (data.match_status === 'applied' || data.match_status === 'failed' || data.match_status === 'completed') {
+                    const isSuccess = data.match_status === 'applied' || data.match_status === 'completed';
+                    updateStatus(isSuccess ? 'success' : 'error', isSuccess ? 'COMPLETED' : 'FAILED');
+                    clearInterval(interval);
+                    isRunning = false;
+                    
+                    addLogEntry(isSuccess ? 'success' : 'error', `Automation ${isSuccess ? 'completed successfully' : 'failed'}`);
+                }
+            } catch (e) { 
+                console.error("Polling error:", e);
+                addLogEntry('error', `Log fetch error: ${e.message}`);
+            }
+        }, 2000);
+    }
+
+    function updateStatus(status, text) {
+        const badge = document.getElementById('status-badge');
+        const statusText = document.getElementById('status-text');
+        if (statusText) statusText.textContent = text;
+        
+        if (badge) {
+            badge.className = 'status-badge';
+            
+            if (status === 'success') {
+                badge.classList.add('bg-green-900', 'text-green-200');
+            } else if (status === 'error') {
+                badge.classList.add('bg-red-900', 'text-red-200');
+            } else if (status === 'running') {
+                badge.classList.add('bg-blue-900', 'text-blue-200');
+            } else {
+                badge.classList.add('bg-yellow-900', 'text-yellow-200');
+            }
+            
+            const icon = badge.querySelector('i');
+            if (icon) {
+                icon.className = status === 'success' ? 'fas fa-check' : 
+                                status === 'error' ? 'fas fa-times' : 
+                                status === 'running' ? 'fas fa-spinner fa-spin' : 
+                                'fas fa-spinner fa-spin';
+            }
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const currentStatus = "{{ match.status }}";
+        console.log("Current match status:", currentStatus);
+        
+        const autoStartStatuses = ['pending', 'ready', 'initialized', 'created'];
+        
+        if (autoStartStatuses.includes(currentStatus)) {
+            updateStatus('running', 'Auto-Starting...');
+            setTimeout(startAutomation, 1500);
+        } else if (currentStatus === 'applying') {
+            updateStatus('running', 'Automation Running...');
+            isRunning = true;
+            startLogPolling();
+        } else if (currentStatus === 'applied' || currentStatus === 'completed') {
+            updateStatus('success', 'COMPLETED');
+        } else if (currentStatus === 'failed') {
+            updateStatus('error', 'FAILED');
+            document.getElementById('control-buttons').style.display = 'flex';
+        } else {
+            document.getElementById('control-buttons').style.display = 'flex';
+        }
+    });
+</script>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,249 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Application Engine</title>
+    <style>
+        :root {
+            --bg-grad-1: #f0f4f8;
+            --bg-grad-2: #d9e2ec;
+            --card: #ffffff;
+            --text: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --border-hover: #d1d5db;
+            --accent: #111827;
+            --accent-hover: #000000;
+            --success-bg: #ecfdf5;
+            --success-border: #10b981;
+            --success-text: #064e3b;
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+                         'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
+            min-height: 100vh;
+            padding: 32px 16px;
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+        .box {
+            max-width: 660px;
+            margin: 0 auto;
+            background: var(--card);
+            padding: 40px 44px;
+            border-radius: 18px;
+            box-shadow: 0 24px 48px rgba(15, 23, 42, 0.10),
+                        0 4px 8px rgba(15, 23, 42, 0.04);
+        }
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin: 0 0 6px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+            margin: 0 0 24px;
+        }
+        .pipeline {
+            background: var(--success-bg);
+            border-left: 3px solid var(--success-border);
+            color: var(--success-text);
+            padding: 16px 18px;
+            border-radius: 8px;
+            margin-bottom: 26px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .pipeline strong { font-weight: 700; }
+        .steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .steps span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .steps .num {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            line-height: 18px;
+            text-align: center;
+            background: var(--success-border);
+            color: white;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 11px;
+        }
+        .field { margin-bottom: 20px; }
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .label-hint {
+            font-weight: 400;
+            color: var(--muted);
+            font-size: 12px;
+            margin-left: 4px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            background: #fff;
+            color: var(--text);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        input:hover, select:hover, textarea:hover {
+            border-color: var(--border-hover);
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.10);
+        }
+        input[type="file"] {
+            padding: 10px;
+            cursor: pointer;
+            background: #fafafa;
+        }
+        .info-text {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.15s, transform 0.08s;
+        }
+        button:hover { background: var(--accent-hover); }
+        button:active { transform: scale(0.99); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            text-decoration: none;
+            color: var(--muted);
+            font-size: 13px;
+        }
+        .back-link:hover { color: var(--accent); }
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 520px) {
+            .box { padding: 28px 22px; border-radius: 12px; }
+            .row { grid-template-columns: 1fr; gap: 0; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>Application Engine</h1>
+    <p class="subtitle">AI-powered job discovery &amp; per-job CV tailoring</p>
+
+    <div class="pipeline">
+        <strong>Fully automated.</strong> Just enter the job title — the bot does the rest.
+        <div class="steps">
+            <span><span class="num">1</span> Search 24h feed</span>
+            <span><span class="num">2</span> Read each JD</span>
+            <span><span class="num">3</span> Extract skills</span>
+            <span><span class="num">4</span> Tailor CV</span>
+            <span><span class="num">5</span> Apply</span>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="field">
+            <label>Job Title <span class="label-hint">— what you're searching for</span></label>
+            <input type="text" name="title" required
+                   placeholder="e.g. Working Student Software Engineer">
+            <div class="info-text">
+                The bot searches LinkedIn for this exact title and applies to matching results.
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="field">
+                <label>Platform</label>
+                <select name="company" required>
+                    {% for c in companies %}
+                        <option value="{{ c.name }}">{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label>Language</label>
+                <select name="language" required>
+                    <option value="english">English</option>
+                    <option value="german">German</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Location <span class="label-hint">— optional</span></label>
+            <input type="text" name="location" placeholder="e.g. Berlin, Germany">
+            <div class="info-text">City or region. Leave blank to search all locations.</div>
+        </div>
+
+        <div class="field">
+            <label>Base CV (PDF)</label>
+            <input type="file" name="resume" accept=".pdf" required>
+            <div class="info-text">
+                For every job found, the bot extracts the required skills from the
+                description and rebuilds your CV with those exact keywords woven in
+                — no two applications use the same CV.
+            </div>
+        </div>
+
+        <button type="submit" id="submitBtn">Start Discovery &amp; Tailoring →</button>
+    </form>
+
+    <a class="back-link" href="{% url 'job_list' %}">← Back to Dashboard</a>
+</div>
+
+<script>
+    document.querySelector('form').addEventListener('submit', function() {
+        var btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = '🔎 Searching 24h feed & tailoring per job...';
+    });
+</script>
+
+</body>
+</html>

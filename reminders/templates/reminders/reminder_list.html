@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reminders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            margin: 0;
+            padding: 0;
+            color: #111827;
+        }
+
+        .page {
+            min-height: 100vh;
+            padding: 30px 18px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 30px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .add-btn {
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 700;
+            transition: 0.2s ease;
+            display: inline-block;
+        }
+
+        .add-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.10);
+            padding: 16px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        li {
+            padding: 14px 14px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            transition: 0.2s ease;
+        }
+
+        li:hover {
+            background: #f9fafb;
+        }
+
+        li:last-child {
+            border-bottom: none;
+        }
+
+        .info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .title {
+            font-weight: 800;
+            font-size: 16px;
+            color: #111827;
+        }
+
+        .meta {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .badge.date {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        .badge.nodate {
+            background: #fff7ed;
+            color: #9a3412;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            transition: 0.2s ease;
+            display: inline-block;
+        }
+
+        .btn.complete {
+            background: #22c55e;
+            color: white;
+        }
+
+        .btn.complete:hover {
+            background: #16a34a;
+            transform: translateY(-1px);
+        }
+
+        .btn.delete {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn.delete:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .empty {
+            text-align: center;
+            padding: 28px;
+            font-size: 15px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="container">
+
+            <div class="header">
+                <h1>Reminders</h1>
+                <a class="add-btn" href="{% url 'reminder_create' %}">+ Add Reminder</a>
+            </div>
+
+            <div class="card">
+                <ul>
+                    {% for reminder in reminders %}
+                        <li>
+                            <div class="info">
+                                <div class="title">{{ reminder.title }}</div>
+
+                                <div class="meta">
+                                    {{ reminder.application.title }} —
+                                    {% if reminder.reminder_date %}
+                                        <span class="badge date">{{ reminder.reminder_date }}</span>
+                                    {% else %}
+                                        <span class="badge nodate">No date</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="actions">
+                                {% if not reminder.is_completed %}
+                                    <a class="btn complete" href="{% url 'reminder_complete' reminder.id %}">
+                                        Complete
+                                    </a>
+                                {% endif %}
+
+                                <a class="btn delete" href="{% url 'reminder_delete' reminder.id %}">
+                                    Delete
+                                </a>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="empty">No reminders yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
